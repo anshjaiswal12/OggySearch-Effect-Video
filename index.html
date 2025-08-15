@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Logo Rotate + Type</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
   <!-- Preconnect + block to avoid font swap/layout shift -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,6 +80,65 @@
         font-size: clamp(18px, 4vw, 32px);
       }
     }
+    
+    /* Extra small devices */
+    @media (max-width: 480px) {
+      .typed-wrap {
+        max-width: 98vw;
+        padding: 0 10px;
+        font-size: clamp(16px, 4.5vw, 28px);
+        line-height: 1.3;
+      }
+      
+      .stage {
+        padding: 3vmin;
+      }
+      
+      .stack {
+        gap: clamp(12px, 2.5vmin, 24px);
+      }
+      
+      #logo {
+        width: clamp(100px, 20vw, 200px);
+      }
+    }
+    
+    /* Small height devices */
+    @media (max-height: 600px) {
+      .typed-wrap {
+        font-size: clamp(16px, 3.5vw, 28px);
+        line-height: 1.2;
+      }
+      
+      .stack {
+        gap: clamp(10px, 2vmin, 20px);
+      }
+      
+      #logo {
+        width: clamp(80px, 15vw, 180px);
+      }
+    }
+    
+    /* Landscape orientation adjustments */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .stage {
+        padding: 2vmin;
+      }
+      
+      .stack {
+        gap: clamp(8px, 2vmin, 16px);
+      }
+      
+      #logo {
+        width: clamp(80px, 15vw, 160px);
+      }
+      
+      .typed-wrap {
+        font-size: clamp(16px, 3vw, 24px);
+        max-width: 85vw;
+      }
+    }
+    
     /* Stable caret that appears only during typing */
     .typed-wrap.typing::after {
       content: "";
@@ -87,10 +146,12 @@
       left: var(--caret-x, 0px);
       top: 0;
       bottom: 0;
-      width: 2px;
+      width: 3px;
       background: #fff;
       animation: blink 1s infinite;
       z-index: 1;
+      border-radius: 1px;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
     }
     
     /* Blinking animation for the caret */
@@ -113,7 +174,11 @@
       padding: 10px 12px;
       border-radius: 14px;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 95vw;
     }
+    
     .panel input[type="text"]{
       width: min(64vw, 640px);
       background: #0f0f0f;
@@ -149,6 +214,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: transform 100ms ease, opacity 120ms ease, filter 120ms ease;
+      white-space: nowrap;
     }
     .panel button:disabled {
       opacity: 0.5;
@@ -160,10 +226,155 @@
       opacity: 0.8;
       user-select: none;
     }
+    
+    /* Responsive control panel */
+    @media (max-width: 768px) {
+      .panel {
+        bottom: 16px;
+        gap: 8px;
+        padding: 8px 10px;
+        flex-direction: column;
+        align-items: stretch;
+        width: 90vw;
+      }
+      
+      .panel input[type="text"] {
+        width: 100%;
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+      
+      .panel input[type="number"] {
+        width: 100%;
+        font-size: 16px;
+      }
+      
+      .panel button {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .panel {
+        bottom: 12px;
+        padding: 6px 8px;
+        gap: 6px;
+        width: 95vw;
+      }
+      
+      .panel input[type="text"] {
+        padding: 8px 10px;
+      }
+      
+      .panel input[type="number"] {
+        padding: 8px 10px;
+      }
+      
+      .panel button {
+        padding: 10px 14px;
+      }
+    }
+    
+    /* Landscape orientation for controls */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .panel {
+        bottom: 8px;
+        padding: 6px 8px;
+        gap: 6px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .panel input[type="text"] {
+        width: min(40vw, 300px);
+      }
+      
+      .panel input[type="number"] {
+        width: 80px;
+      }
+    }
 
     /* Reduced motion: skip rotation & type instantly */
     @media (prefers-reduced-motion: reduce) {
       #logo, .typed-wrap { transition: none !important; animation: none !important; }
+    }
+    
+    /* High DPI displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      #logo {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+      }
+    }
+    
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+      .panel button {
+        min-height: 44px; /* iOS touch target minimum */
+      }
+      
+      .panel input {
+        min-height: 44px;
+      }
+    }
+    
+    /* Floating button responsive styles */
+    #showControlsBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      display: none;
+      z-index: 1000;
+      transition: all 0.2s ease;
+      min-height: 44px;
+      min-width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    @media (max-width: 768px) {
+      #showControlsBtn {
+        top: 16px;
+        right: 16px;
+        padding: 10px 14px;
+        font-size: 14px;
+        min-height: 48px;
+        min-width: 48px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      #showControlsBtn {
+        top: 12px;
+        right: 12px;
+        padding: 8px 12px;
+        font-size: 13px;
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+    
+    /* Landscape orientation for floating button */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #showControlsBtn {
+        top: 8px;
+        right: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 40px;
+        min-width: 40px;
+      }
     }
   </style>
 </head>
@@ -198,22 +409,7 @@
   </form>
 
   <!-- Floating show controls button -->
-  <button id="showControlsBtn" style="
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    display: none;
-    z-index: 1000;
-    transition: all 0.2s ease;
-  ">Show Controls</button>
+  <button id="showControlsBtn">Show Controls</button>
 
   <script>
     (() => {
@@ -339,34 +535,106 @@
         const typingSpeed = parseInt(typingSpeedInput.value) || 55; // Default to 55ms if invalid
 
         const caretMeasure = (substr) => {
-          // Create a temporary span to measure the exact caret position
-          const tempSpan = document.createElement('span');
-          tempSpan.textContent = substr;
-          tempSpan.style.visibility = 'hidden';
-          tempSpan.style.position = 'absolute';
-          tempSpan.style.left = '-9999px';
-          tempSpan.style.whiteSpace = 'pre-wrap';
-          tempSpan.style.fontFamily = getComputedStyle(typed).fontFamily;
-          tempSpan.style.fontSize = getComputedStyle(typed).fontSize;
-          tempSpan.style.fontWeight = getComputedStyle(typed).fontWeight;
-          tempSpan.style.letterSpacing = getComputedStyle(typed).letterSpacing;
-          tempSpan.style.lineHeight = getComputedStyle(typed).lineHeight;
-          tempSpan.style.maxWidth = getComputedStyle(typed).maxWidth;
-          tempSpan.style.textAlign = getComputedStyle(typed).textAlign;
-          tempSpan.style.wordWrap = getComputedStyle(typed).wordWrap;
-          tempSpan.style.overflowWrap = getComputedStyle(typed).overflowWrap;
-          tempSpan.style.padding = getComputedStyle(typed).padding;
-          tempSpan.style.boxSizing = getComputedStyle(typed).boxSizing;
+          // Advanced caret positioning for realistic typing experience
+          if (substr.length === 0) {
+            typed.style.setProperty('--caret-x', '0px');
+            return;
+          }
           
-          document.body.appendChild(tempSpan);
-          const rect = tempSpan.getBoundingClientRect();
-          document.body.removeChild(tempSpan);
+          // Create a temporary container that exactly matches the typed container
+          const tempContainer = document.createElement('div');
+          tempContainer.style.cssText = getComputedStyle(typed).cssText;
+          tempContainer.style.position = 'absolute';
+          tempContainer.style.visibility = 'hidden';
+          tempContainer.style.left = '-9999px';
+          tempContainer.style.top = '-9999px';
+          tempContainer.style.width = getComputedStyle(typed).width;
+          tempContainer.style.maxWidth = getComputedStyle(typed).maxWidth;
+          tempContainer.style.whiteSpace = 'pre-wrap';
+          tempContainer.style.wordWrap = 'break-word';
+          tempContainer.style.overflowWrap = 'break-word';
+          tempContainer.style.textAlign = 'center';
+          tempContainer.style.padding = getComputedStyle(typed).padding;
+          tempContainer.style.boxSizing = 'border-box';
+          tempContainer.style.fontFamily = getComputedStyle(typed).fontFamily;
+          tempContainer.style.fontSize = getComputedStyle(typed).fontSize;
+          tempContainer.style.fontWeight = getComputedStyle(typed).fontWeight;
+          tempContainer.style.letterSpacing = getComputedStyle(typed).letterSpacing;
+          tempContainer.style.lineHeight = getComputedStyle(typed).lineHeight;
           
-          // Calculate caret position - ensure it's within bounds
-          let caretX = rect.width;
-          const maxWidth = typed.offsetWidth - 40; // Account for padding
-          caretX = Math.min(caretX, maxWidth);
-          caretX = Math.max(caretX, 0);
+          // Set the text content
+          tempContainer.textContent = substr;
+          document.body.appendChild(tempContainer);
+          
+          // Get the container dimensions
+          const containerRect = tempContainer.getBoundingClientRect();
+          document.body.removeChild(tempContainer);
+          
+          // Now create a more precise measurement for the last character
+          const lastChar = substr.slice(-1);
+          const textBeforeLastChar = substr.slice(0, -1);
+          
+          // Create container for text before last character
+          const beforeContainer = document.createElement('div');
+          beforeContainer.style.cssText = getComputedStyle(typed).cssText;
+          beforeContainer.style.position = 'absolute';
+          beforeContainer.style.visibility = 'hidden';
+          beforeContainer.style.left = '-9999px';
+          beforeContainer.style.top = '-9999px';
+          beforeContainer.style.width = getComputedStyle(typed).width;
+          beforeContainer.style.maxWidth = getComputedStyle(typed).maxWidth;
+          beforeContainer.style.whiteSpace = 'pre-wrap';
+          beforeContainer.style.wordWrap = 'break-word';
+          beforeContainer.style.overflowWrap = 'break-word';
+          beforeContainer.style.textAlign = 'center';
+          beforeContainer.style.padding = getComputedStyle(typed).padding;
+          beforeContainer.style.boxSizing = 'border-box';
+          beforeContainer.style.fontFamily = getComputedStyle(typed).fontFamily;
+          beforeContainer.style.fontSize = getComputedStyle(typed).fontSize;
+          beforeContainer.style.fontWeight = getComputedStyle(typed).fontWeight;
+          beforeContainer.style.letterSpacing = getComputedStyle(typed).letterSpacing;
+          beforeContainer.style.lineHeight = getComputedStyle(typed).lineHeight;
+          
+          beforeContainer.textContent = textBeforeLastChar;
+          document.body.appendChild(beforeContainer);
+          
+          // Create span for the last character
+          const lastCharSpan = document.createElement('span');
+          lastCharSpan.textContent = lastChar;
+          lastCharSpan.style.display = 'inline';
+          beforeContainer.appendChild(lastCharSpan);
+          
+          // Measure the position of the last character
+          const lastCharRect = lastCharSpan.getBoundingClientRect();
+          const beforeContainerRect = beforeContainer.getBoundingClientRect();
+          
+          document.body.removeChild(beforeContainer);
+          
+          // Calculate the caret position
+          let caretX = 0;
+          
+          if (lastChar === ' ') {
+            // For spaces, position after the space
+            caretX = lastCharRect.right - beforeContainerRect.left;
+          } else if (lastChar === '\n') {
+            // For line breaks, position at the start of the next line
+            caretX = 0;
+          } else {
+            // For regular characters, position after the character
+            caretX = lastCharRect.right - beforeContainerRect.left;
+          }
+          
+          // Account for text centering
+          const containerWidth = typed.offsetWidth;
+          const textWidth = Math.min(containerRect.width, containerWidth - 40);
+          const centerOffset = (containerWidth - textWidth) / 2;
+          
+          // Adjust caret position for centering
+          caretX += centerOffset;
+          
+          // Ensure caret is within bounds
+          caretX = Math.min(caretX, containerWidth - 20);
+          caretX = Math.max(caretX, 20);
           
           // Set the caret position
           typed.style.setProperty('--caret-x', caretX + 'px');
