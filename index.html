@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Logo Rotate + Type</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Preconnect + block to avoid font swap/layout shift -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=block" rel="stylesheet">
+
+  <style>
+    /* --- Reset & base --- */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      overflow: hidden; /* true fullscreen with no accidental scroll */
+    }
+
+    /* --- Layout --- */
+    .stage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 5vmin;
+    }
+
+    .stack {
+      display: grid;
+      justify-items: center;
+      gap: clamp(16px, 3vmin, 32px);
+    }
+
+    /* --- Logo --- */
+    .logo-wrap {
+      /* isolate for clean GPU compositing and to avoid subpixel dirt */
+      contain: paint;
+    }
+    #logo {
+      width: clamp(120px, 18vw, 260px);
+      height: auto;
+      image-rendering: auto;              /* keep it crisp, no pixelation */
+      transform-origin: 50% 50%;
+      will-change: transform;
+      backface-visibility: hidden;
+      display: block;
+      filter: none;
+    }
+
+    /* --- Text (typed) --- */
+    .typed-wrap {
+      /* Reserve height so nothing shifts when text appears */
+      line-height: 1.2;
+      font-size: clamp(20px, 3.5vw, 40px);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      white-space: pre-wrap;        /* allow text wrapping while preserving spaces */
+      will-change: contents;   /* tiny optimization; content only */
+      position: relative;
+      max-width: min(90vw, 800px);  /* prevent text from going off-screen */
+      text-align: center;           /* center the text */
+      word-wrap: break-word;        /* break long words if needed */
+      overflow-wrap: break-word;    /* modern word breaking */
+      padding: 0 20px;              /* add some horizontal padding */
+      box-sizing: border-box;       /* include padding in width calculation */
+    }
+    
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+      .typed-wrap {
+        max-width: 95vw;
+        padding: 0 15px;
+        font-size: clamp(18px, 4vw, 32px);
+      }
+    }
+    /* Stable caret that appears only during typing */
+    .typed-wrap.typing::after {
+      content: "";
+      position: absolute;
+      left: var(--caret-x, 0px);
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #fff;
+      animation: blink 1s infinite;
+      z-index: 1;
+    }
+    
+    /* Blinking animation for the caret */
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    /* --- Controls (fixed, non-intrusive) --- */
+    .panel {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+      padding: 10px 12px;
+      border-radius: 14px;
+      align-items: center;
+    }
+    .panel input[type="text"]{
+      width: min(64vw, 640px);
+      background: #0f0f0f;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 120ms ease;
+      font: inherit;
+    }
+    .panel input[type="number"]{
+      width: 120px;
+      background: #0f0f0f;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 120ms ease;
+      font: inherit;
+    }
+    .panel input[type="text"]::placeholder { color: #aaa; }
+    .panel input[type="number"]::placeholder { color: #aaa; }
+    .panel input[type="text"]:focus { border-color: #6ea8ff; }
+    .panel input[type="number"]:focus { border-color: #6ea8ff; }
+    .panel button {
+      background: #1e90ff;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 100ms ease, opacity 120ms ease, filter 120ms ease;
+    }
+    .panel button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      filter: grayscale(0.3);
+    }
+    .panel .note {
+      font-size: 12px;
+      opacity: 0.8;
+      user-select: none;
+    }
+
+    /* Reduced motion: skip rotation & type instantly */
+    @media (prefers-reduced-motion: reduce) {
+      #logo, .typed-wrap { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" aria-label="Animation Stage">
+    <div class="stack">
+      <div class="logo-wrap">
+        <!-- Replace src with your transparent PNG path -->
+        <img id="logo" src="logo.png" alt="Logo" decoding="async" />
+      </div>
+      <div id="typed" class="typed-wrap" aria-live="off"></div>
+    </div>
+  </main>
+
+  <form class="panel" id="controls" autocomplete="off">
+    <input id="textInput" type="text" inputmode="text"
+           placeholder='Type text (e.g., "Hello World")' maxlength="200"
+           aria-label="Text to type" />
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <span style="font-size: 11px; opacity: 0.7; color: #aaa;">Rotation Time</span>
+      <input id="timeInput" type="number" min="100" max="10000" step="100" value="1000"
+             placeholder="Rotation time (ms)" aria-label="Rotation time in milliseconds" />
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <span style="font-size: 11px; opacity: 0.7; color: #aaa;">Typing Speed</span>
+      <input id="typingSpeedInput" type="number" min="10" max="500" step="5" value="55"
+             placeholder="ms per char" aria-label="Typing speed in milliseconds per character" />
+    </div>
+    <button id="playBtn" type="submit">Play</button>
+    <button id="toggleControlsBtn" type="button" style="background: #333; margin-left: 8px;">Hide Controls</button>
+    <span class="note" id="status"></span>
+  </form>
+
+  <!-- Floating show controls button -->
+  <button id="showControlsBtn" style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    display: none;
+    z-index: 1000;
+    transition: all 0.2s ease;
+  ">Show Controls</button>
+
+  <script>
+    (() => {
+      const logo = document.getElementById('logo');
+      const typed = document.getElementById('typed');
+      const form = document.getElementById('controls');
+      const input = document.getElementById('textInput');
+      const timeInput = document.getElementById('timeInput');
+      const typingSpeedInput = document.getElementById('typingSpeedInput');
+      const playBtn = document.getElementById('playBtn');
+      const statusEl = document.getElementById('status');
+      const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+      const showControlsBtn = document.getElementById('showControlsBtn');
+
+      // Tunables
+      const START_PAUSE_MS = 80;    // brief pause before typing
+      const USE_WEB_ANIM = 'animate' in document.documentElement;
+
+      let animating = false;
+      let controlsVisible = true;
+
+      // Preload & decode logo to avoid flicker on first play
+      const preloadLogo = () => {
+        const img = new Image();
+        img.src = logo.currentSrc || logo.src;
+        if (img.decode) img.decode().catch(()=>{});
+      };
+      preloadLogo();
+
+      // Measure target text width/height with Montserrat to lock layout before typing
+      const measureText = (text) => {
+        // Off-DOM measurer with identical styles
+        const m = document.createElement('span');
+        m.textContent = text || "";
+        m.style.visibility = 'hidden';
+        m.style.position = 'absolute';
+        m.style.left = '-9999px';
+        m.style.whiteSpace = 'pre-wrap';  // match the new CSS
+        m.style.fontFamily = getComputedStyle(typed).fontFamily;
+        m.style.fontSize = getComputedStyle(typed).fontSize;
+        m.style.fontWeight = getComputedStyle(typed).fontWeight;
+        m.style.letterSpacing = getComputedStyle(typed).letterSpacing;
+        m.style.lineHeight = getComputedStyle(typed).lineHeight;
+        m.style.maxWidth = getComputedStyle(typed).maxWidth;  // respect max-width
+        m.style.textAlign = getComputedStyle(typed).textAlign;
+        m.style.wordWrap = getComputedStyle(typed).wordWrap;
+        m.style.overflowWrap = getComputedStyle(typed).overflowWrap;
+        document.body.appendChild(m);
+        const rect = m.getBoundingClientRect();
+        document.body.removeChild(m);
+        return { width: Math.ceil(rect.width), height: Math.ceil(rect.height) };
+      };
+
+      // Lock the typed container to the final width to avoid layout shifts
+      const lockTypedBox = (text) => {
+        const { width, height } = measureText(text);
+        // Use measured width but respect max-width constraint
+        const maxWidth = Math.min(90 * window.innerWidth / 100, 800);
+        const finalWidth = Math.min(width, maxWidth);
+        typed.style.width = finalWidth + 'px';
+        typed.style.minHeight = height + 'px';
+        // Position caret at start
+        typed.style.setProperty('--caret-x', '0px');
+      };
+
+      // Rotate logo exactly once (360°)
+      const rotateOnce = () => new Promise((resolve) => {
+        const rotationTime = parseInt(timeInput.value) || 1000; // Default to 1000ms if invalid
+        
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          // Instantly "complete"
+          logo.style.transform = 'rotate(360deg)';
+          resolve();
+          return;
+        }
+        if (USE_WEB_ANIM) {
+          const anim = logo.animate(
+            [
+              { transform: 'rotate(0deg) translateZ(0)' },
+              { transform: 'rotate(360deg) translateZ(0)' }
+            ],
+            {
+              duration: rotationTime,
+              easing: 'cubic-bezier(0.2, 0, 0.2, 1)', // smooth but exact time
+              fill: 'forwards'
+            }
+          );
+          anim.addEventListener('finish', resolve, { once: true });
+        } else {
+          // CSS fallback via JS timing
+          const start = performance.now();
+          const step = (t) => {
+            const p = Math.min(1, (t - start) / rotationTime);
+            logo.style.transform = `rotate(${(p * 360).toFixed(3)}deg) translateZ(0)`;
+            if (p < 1) requestAnimationFrame(step);
+            else resolve();
+          };
+          requestAnimationFrame(step);
+        }
+      });
+
+      // Typewriter with frame-locked timing; updates caret position to avoid flicker
+      const typeText = (text) => new Promise((resolve) => {
+        if (!text) {
+          typed.textContent = '';
+          typed.classList.remove('typing');
+          resolve();
+          return;
+        }
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          typed.textContent = text;
+          typed.classList.remove('typing');
+          resolve();
+          return;
+        }
+
+        typed.textContent = '';
+        typed.classList.add('typing');
+
+        const total = text.length;
+        const start = performance.now() + START_PAUSE_MS;
+        let lastDrawn = -1;
+        const typingSpeed = parseInt(typingSpeedInput.value) || 55; // Default to 55ms if invalid
+
+        const caretMeasure = (substr) => {
+          // Create a temporary span to measure the exact caret position
+          const tempSpan = document.createElement('span');
+          tempSpan.textContent = substr;
+          tempSpan.style.visibility = 'hidden';
+          tempSpan.style.position = 'absolute';
+          tempSpan.style.left = '-9999px';
+          tempSpan.style.whiteSpace = 'pre-wrap';
+          tempSpan.style.fontFamily = getComputedStyle(typed).fontFamily;
+          tempSpan.style.fontSize = getComputedStyle(typed).fontSize;
+          tempSpan.style.fontWeight = getComputedStyle(typed).fontWeight;
+          tempSpan.style.letterSpacing = getComputedStyle(typed).letterSpacing;
+          tempSpan.style.lineHeight = getComputedStyle(typed).lineHeight;
+          tempSpan.style.maxWidth = getComputedStyle(typed).maxWidth;
+          tempSpan.style.textAlign = getComputedStyle(typed).textAlign;
+          tempSpan.style.wordWrap = getComputedStyle(typed).wordWrap;
+          tempSpan.style.overflowWrap = getComputedStyle(typed).overflowWrap;
+          tempSpan.style.padding = getComputedStyle(typed).padding;
+          tempSpan.style.boxSizing = getComputedStyle(typed).boxSizing;
+          
+          document.body.appendChild(tempSpan);
+          const rect = tempSpan.getBoundingClientRect();
+          document.body.removeChild(tempSpan);
+          
+          // Calculate caret position - ensure it's within bounds
+          let caretX = rect.width;
+          const maxWidth = typed.offsetWidth - 40; // Account for padding
+          caretX = Math.min(caretX, maxWidth);
+          caretX = Math.max(caretX, 0);
+          
+          // Set the caret position
+          typed.style.setProperty('--caret-x', caretX + 'px');
+        };
+
+        const frame = (now) => {
+          if (now < start) return requestAnimationFrame(frame);
+          const elapsed = now - start;
+          const idx = Math.min(total, Math.floor(elapsed / typingSpeed));
+          if (idx !== lastDrawn) {
+            const chunk = text.slice(0, idx);
+            typed.textContent = chunk;
+            caretMeasure(chunk);
+            lastDrawn = idx;
+          }
+          if (idx < total) requestAnimationFrame(frame);
+          else {
+            // Finalize: set full text, remove caret, lock everything
+            typed.textContent = text;
+            caretMeasure(text);
+            // Small timeout ensures last paint completes before removing caret
+            requestAnimationFrame(() => {
+              typed.classList.remove('typing');
+              resolve();
+            });
+          }
+        };
+        requestAnimationFrame(frame);
+      });
+
+      // Disable/enable controls safely
+      const setBusy = (busy, msg = '') => {
+        animating = busy;
+        playBtn.disabled = busy;
+        input.disabled = busy;
+        timeInput.disabled = busy;
+        typingSpeedInput.disabled = busy;
+        statusEl.textContent = msg;
+        
+        // Hide controls during animation for clean recording
+        if (busy) {
+          form.style.display = 'none';
+          controlsVisible = false;
+          toggleControlsBtn.textContent = 'Show Controls';
+          showControlsBtn.style.display = 'block'; // Show floating button
+        } else {
+          // Show controls again when animation is complete
+          form.style.display = 'flex';
+          controlsVisible = true;
+          toggleControlsBtn.textContent = 'Hide Controls';
+          showControlsBtn.style.display = 'none'; // Hide floating button
+        }
+      };
+
+      // On submit: run the full sequence deterministically
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (animating) return;
+
+        // Get text; trim but preserve internal spaces
+        const text = input.value ?? '';
+        // Lock box size BEFORE any visual change to avoid shifts
+        lockTypedBox(text);
+
+        // Reset visuals to a known baseline
+        typed.textContent = '';
+        typed.classList.remove('typing');
+        logo.style.transform = 'rotate(0deg) translateZ(0)';
+
+        setBusy(true, 'Animating…');
+
+        try {
+          // Ensure font is ready (prevents mid-run swap). If not supported, we proceed.
+          if (document.fonts?.ready) await document.fonts.ready;
+
+          // Ensure image decoded (no blur/flicker on first frame)
+          if (logo.decode) { try { await logo.decode(); } catch {} }
+
+          // 1) Rotate once
+          await rotateOnce();
+
+          // 2) Type the text
+          await typeText(text);
+
+          // Keep everything fixed; no further style changes after this point.
+          setBusy(false, 'Done');
+          // Briefly show status then clear (no layout shift in stage)
+          setTimeout(() => { if (!animating) statusEl.textContent = ''; }, 800);
+        } catch (err) {
+          console.error(err);
+          setBusy(false, 'Error');
+        }
+      });
+
+      // Optional: Enter key trigger, initial placeholder text
+      input.value = 'Hello World';
+
+      // Toggle controls visibility
+      toggleControlsBtn.addEventListener('click', () => {
+        controlsVisible = !controlsVisible;
+        form.style.display = controlsVisible ? 'flex' : 'none';
+        toggleControlsBtn.textContent = controlsVisible ? 'Hide Controls' : 'Show Controls';
+        showControlsBtn.style.display = controlsVisible ? 'block' : 'none';
+      });
+
+      // Show controls button
+      showControlsBtn.addEventListener('click', () => {
+        controlsVisible = true;
+        form.style.display = 'flex';
+        toggleControlsBtn.textContent = 'Hide Controls';
+        showControlsBtn.style.display = 'none';
+      });
+    })();
+  </script>
+</body>
+</html>
